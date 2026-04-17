@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'express-api',
-      script: './app.js',
+      script: './src/server.js',
       cwd: '/data/www/express-api/current',
       instances: 1,
       exec_mode: 'fork',

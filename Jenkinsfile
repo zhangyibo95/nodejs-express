@@ -21,17 +21,24 @@ pipeline {
             steps {
                 sh 'node -v'
                 sh 'npm -v'
-                sh 'npm ci'
+                sh '''
+                    if [ -f package-lock.json ]; then
+                      npm ci
+                    else
+                      npm install
+                    fi
+                '''
             }
         }
 
         stage('Test') {
             steps {
                 sh '''
-                    if npm run | grep -q " test"; then
-                      npm test
+                    TEST_SCRIPT=$(node -p "require('./package.json').scripts && require('./package.json').scripts.test ? require('./package.json').scripts.test : ''")
+                    if [ -z "$TEST_SCRIPT" ] || [ "$TEST_SCRIPT" = "echo \\"Error: no test specified\\" && exit 1" ]; then
+                      echo "No real test script found, skip"
                     else
-                      echo "No test script found, skip"
+                      npm test
                     fi
                 '''
             }

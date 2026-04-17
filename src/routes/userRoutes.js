@@ -4,8 +4,8 @@ import { createUser, getUsers, deleteUser } from '../controllers/userController.
 
 const userRouter = Router();
 
-userRouter.get('/', getUsers);
-userRouter.post('/', createUser);
-userRouter.delete('/:name', deleteUser);
+userRouter.get('/api', getUsers);
+userRouter.post('/api', createUser);
+userRouter.delete('/api/:name', deleteUser);
 
 export { userRouter };

@@ -5,8 +5,8 @@ import { protect } from '../middleware/auth.js';
 
 const authRouter = Router();
 
-authRouter.post('/login', login);
-authRouter.post('/register', register);
-authRouter.get('/me', protect, getProfile);
+authRouter.post('/api/login', login);
+authRouter.post('/api/register', register);
+authRouter.get('/api/me', protect, getProfile);
 
 export { authRouter };

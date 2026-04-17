@@ -23,7 +23,7 @@ const getUsers = async (req, res, next) => {
         last_login_ip AS lastLoginIp,
         created_at AS createdAt,
         updated_at AS updatedAt
-      FROM Tab_User_Info
+      FROM tab_user_info
       WHERE is_deleted = 0
       ORDER BY id DESC
     `;
@@ -84,7 +84,7 @@ const deleteUser = async (req, res, next) => {
     }
 
     const [existingUsers] = await pool.query(
-      'SELECT id FROM Tab_User_Info WHERE account = ? AND is_deleted = 0 LIMIT 1',
+      'SELECT id FROM tab_user_info WHERE account = ? AND is_deleted = 0 LIMIT 1',
       [account]
     );
 
@@ -97,7 +97,7 @@ const deleteUser = async (req, res, next) => {
     }
 
     await pool.execute(
-      'UPDATE Tab_User_Info SET is_deleted = 1 WHERE account = ?',
+      'UPDATE tab_user_info SET is_deleted = 1 WHERE account = ?',
       [account]
     );
 

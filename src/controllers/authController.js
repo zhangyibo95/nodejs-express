@@ -76,8 +76,8 @@ const getUserWithProfileByAccount = async (connection, account) => {
       p.birthday,
       p.address,
       p.bio
-    FROM Tab_User_Info AS u
-    LEFT JOIN Tab_User_Profile AS p ON p.user_id = u.id AND p.is_deleted = 0
+    FROM tab_user_info AS u
+    LEFT JOIN tab_user_profile AS p ON p.user_id = u.id AND p.is_deleted = 0
     WHERE u.account = ? AND u.is_deleted = 0
     LIMIT 1
   `;
@@ -115,8 +115,8 @@ const getUserWithProfileById = async (connection, userId) => {
       p.birthday,
       p.address,
       p.bio
-    FROM Tab_User_Info AS u
-    LEFT JOIN Tab_User_Profile AS p ON p.user_id = u.id AND p.is_deleted = 0
+    FROM tab_user_info AS u
+    LEFT JOIN tab_user_profile AS p ON p.user_id = u.id AND p.is_deleted = 0
     WHERE u.id = ? AND u.is_deleted = 0
     LIMIT 1
   `;
@@ -139,8 +139,8 @@ const getUserRolesByUserId = async (connection, userId) => {
       r.role_code,
       r.role_name,
       r.remark
-    FROM Tab_Role AS r
-    INNER JOIN Tab_User_Role AS ur ON ur.role_id = r.id
+    FROM tab_role AS r
+    INNER JOIN tab_user_role AS ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
       AND ur.is_deleted = 0
       AND r.status = 1
@@ -166,10 +166,10 @@ const getUserPermissionsByUserId = async (connection, userId) => {
       p.permission_code,
       p.permission_name,
       p.remark
-    FROM Tab_Permission AS p
-    INNER JOIN Tab_Role_Permission AS rp ON rp.permission_id = p.id
-    INNER JOIN Tab_User_Role AS ur ON ur.role_id = rp.role_id
-    INNER JOIN Tab_Role AS r ON r.id = ur.role_id
+    FROM tab_permission AS p
+    INNER JOIN tab_role_permission AS rp ON rp.permission_id = p.id
+    INNER JOIN tab_user_role AS ur ON ur.role_id = rp.role_id
+    INNER JOIN tab_role AS r ON r.id = ur.role_id
     WHERE ur.user_id = ?
       AND ur.is_deleted = 0
       AND rp.is_deleted = 0
@@ -185,7 +185,7 @@ const getUserPermissionsByUserId = async (connection, userId) => {
 
 /**
  * 写入登录日志。
- * 无论登录成功还是失败，都统一写到 `Tab_Login_Log` 中。
+ * 无论登录成功还是失败，都统一写到 `tab_login_log` 中。
  *
  * @param {import('mysql2/promise').PoolConnection} connection 数据库连接
  * @param {object} payload 日志内容
@@ -193,7 +193,7 @@ const getUserPermissionsByUserId = async (connection, userId) => {
  */
 const insertLoginLog = async (connection, payload) => {
   const sql = `
-    INSERT INTO Tab_Login_Log (
+    INSERT INTO tab_login_log (
       user_id,
       account,
       login_result,
@@ -272,7 +272,7 @@ const register = async (req, res, next) => {
 
     // account 唯一校验。
     const [existingUsers] = await connection.query(
-      'SELECT id FROM Tab_User_Info WHERE account = ? LIMIT 1',
+      'SELECT id FROM tab_user_info WHERE account = ? LIMIT 1',
       [account]
     );
 
@@ -292,7 +292,7 @@ const register = async (req, res, next) => {
     // 写入用户主表。
     const [userResult] = await connection.execute(
       `
-        INSERT INTO Tab_User_Info (
+        INSERT INTO tab_user_info (
           account,
           password_hash,
           status,
@@ -306,7 +306,7 @@ const register = async (req, res, next) => {
     // 写入用户扩展资料表。
     await connection.execute(
       `
-        INSERT INTO Tab_User_Profile (
+        INSERT INTO tab_user_profile (
           user_id,
           nick_name,
           real_name,
@@ -455,7 +455,7 @@ const login = async (req, res, next) => {
 
       await connection.execute(
         `
-          UPDATE Tab_User_Info
+          UPDATE tab_user_info
           SET login_fail_count = ?, status = ?, locked_at = IF(? = 2, NOW(), locked_at)
           WHERE id = ?
         `,
@@ -487,7 +487,7 @@ const login = async (req, res, next) => {
     // 登录成功后清空失败次数，并刷新最后登录信息。
     await connection.execute(
       `
-        UPDATE Tab_User_Info
+        UPDATE tab_user_info
         SET
           login_fail_count = 0,
           status = 1,

@@ -34,7 +34,7 @@ const toSafeUser = (user) => {
       nickName: user.nick_name,
       realName: user.real_name,
       avatarUrl: user.avatar_url,
-      phone: user.phone,
+      mobile: user.mobile,
       email: user.email,
       gender: user.gender,
       birthday: user.birthday,
@@ -70,7 +70,7 @@ const getUserWithProfileByAccount = async (connection, account) => {
       p.nick_name,
       p.real_name,
       p.avatar_url,
-      p.phone,
+      p.mobile,
       p.email,
       p.gender,
       p.birthday,
@@ -109,7 +109,7 @@ const getUserWithProfileById = async (connection, userId) => {
       p.nick_name,
       p.real_name,
       p.avatar_url,
-      p.phone,
+      p.mobile,
       p.email,
       p.gender,
       p.birthday,
@@ -138,7 +138,7 @@ const getUserRolesByUserId = async (connection, userId) => {
       r.id,
       r.role_code,
       r.role_name,
-      r.description
+      r.remark
     FROM Tab_Role AS r
     INNER JOIN Tab_User_Role AS ur ON ur.role_id = r.id
     WHERE ur.user_id = ?
@@ -165,7 +165,7 @@ const getUserPermissionsByUserId = async (connection, userId) => {
       p.id,
       p.permission_code,
       p.permission_name,
-      p.description
+      p.remark
     FROM Tab_Permission AS p
     INNER JOIN Tab_Role_Permission AS rp ON rp.permission_id = p.id
     INNER JOIN Tab_User_Role AS ur ON ur.role_id = rp.role_id
@@ -196,8 +196,8 @@ const insertLoginLog = async (connection, payload) => {
     INSERT INTO Tab_Login_Log (
       user_id,
       account,
-      login_status,
-      failure_reason,
+      login_result,
+      fail_reason,
       login_ip,
       user_agent
     ) VALUES (?, ?, ?, ?, ?, ?)
@@ -205,8 +205,8 @@ const insertLoginLog = async (connection, payload) => {
   await connection.execute(sql, [
     payload.userId || null,
     payload.account,
-    payload.loginStatus,
-    payload.failureReason || null,
+    payload.login_result,
+    payload.fail_reason || null,
     payload.loginIp || null,
     payload.userAgent || null
   ]);
@@ -254,7 +254,7 @@ const register = async (req, res, next) => {
       password,
       nickName = null,
       realName = null,
-      phone = null,
+      mobile = null,
       email = null
     } = req.body;
 
@@ -310,12 +310,12 @@ const register = async (req, res, next) => {
           user_id,
           nick_name,
           real_name,
-          phone,
+          mobile,
           email,
           is_deleted
         ) VALUES (?, ?, ?, ?, ?, 0)
       `,
-      [userResult.insertId, nickName, realName, phone, email]
+      [userResult.insertId, nickName, realName, mobile, email]
     );
 
     // 注册完成后顺手查询角色并签发 token，前端可以直接进入登录态。
@@ -395,8 +395,8 @@ const login = async (req, res, next) => {
       // 账号不存在也要记失败日志，方便审计。
       await insertLoginLog(connection, {
         account,
-        loginStatus: 0,
-        failureReason: 'ACCOUNT_NOT_FOUND',
+        login_result: 0,
+        fail_reason: 'ACCOUNT_NOT_FOUND',
         loginIp,
         userAgent
       });
@@ -413,8 +413,8 @@ const login = async (req, res, next) => {
       await insertLoginLog(connection, {
         userId: user.id,
         account,
-        loginStatus: 0,
-        failureReason: 'ACCOUNT_DISABLED',
+        login_result: 0,
+        fail_reason: 'ACCOUNT_DISABLED',
         loginIp,
         userAgent
       });
@@ -431,8 +431,8 @@ const login = async (req, res, next) => {
       await insertLoginLog(connection, {
         userId: user.id,
         account,
-        loginStatus: 0,
-        failureReason: 'ACCOUNT_LOCKED',
+        login_result: 0,
+        fail_reason: 'ACCOUNT_LOCKED',
         loginIp,
         userAgent
       });
@@ -465,8 +465,8 @@ const login = async (req, res, next) => {
       await insertLoginLog(connection, {
         userId: user.id,
         account,
-        loginStatus: 0,
-        failureReason: nextStatus === 2 ? 'PASSWORD_ERROR_LOCKED' : 'PASSWORD_ERROR',
+        login_result: 0,
+        fail_reason: nextStatus === 2 ? 'PASSWORD_ERROR_LOCKED' : 'PASSWORD_ERROR',
         loginIp,
         userAgent
       });
@@ -507,7 +507,7 @@ const login = async (req, res, next) => {
     await insertLoginLog(connection, {
       userId: user.id,
       account,
-      loginStatus: 1,
+      login_result: 1,
       loginIp,
       userAgent
     });

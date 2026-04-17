@@ -1,77 +1,110 @@
 import { pool } from '../config/database.js';
 import { AppError } from '../utils/appError.js';
 
+/**
+ * 获取用户列表。
+ * 这里只查询未删除用户，返回的是用户主表中的核心字段。
+ *
+ * @param {import('express').Request} req 请求对象
+ * @param {import('express').Response} res 响应对象
+ * @param {import('express').NextFunction} next Express next
+ * @returns {Promise<void>}
+ */
 const getUsers = async (req, res, next) => {
   try {
-    const sql = 'SELECT * FROM Tab_User_Info ORDER BY id DESC';
+    const sql = `
+      SELECT
+        id AS userId,
+        account,
+        status,
+        is_deleted AS isDeleted,
+        login_fail_count AS loginFailCount,
+        last_login_at AS lastLoginAt,
+        last_login_ip AS lastLoginIp,
+        created_at AS createdAt,
+        updated_at AS updatedAt
+      FROM Tab_User_Info
+      WHERE is_deleted = 0
+      ORDER BY id DESC
+    `;
     const [results] = await pool.query(sql);
 
     res.json({
       code: 0,
       data: results,
-      msg: '获取用户列表成功'
+      msg: 'get users success'
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * 提示调用方不要走旧的创建用户接口。
+ * 当前项目已经把注册统一收口到 `/api/auth/register`。
+ *
+ * @param {import('express').Request} req 请求对象
+ * @param {import('express').Response} res 响应对象
+ * @param {import('express').NextFunction} next Express next
+ * @returns {Promise<void>}
+ */
 const createUser = async (req, res, next) => {
   try {
-    const { name, description } = req.body;
+    const { account } = req.body;
 
-    if (!name || !description) {
-      throw new AppError('Name and description are required', 400);
+    if (!account) {
+      throw new AppError('account is required', 400);
     }
 
-    // 检查数据是否已存在
-    const checkSql = 'SELECT id FROM Tab_User_Info WHERE name = ?';
-    const [existingUsers] = await pool.query(checkSql, [name]);
-
-    if (existingUsers.length > 0) {
-      return res.status(200).json({
-        code: 1,
-        data: null,
-        msg: '用户已存在，请使用其他用户名'
-      });
-    }
-
-    const sql = 'INSERT INTO Tab_User_Info (`name`, `description`) VALUES (?, ?)';
-    const [result] = await pool.execute(sql, [name, description]);
-
-    res.status(201).json({
-      code: 0,
-      data: { id: result.insertId },
-      msg: '用户创建成功'
+    return res.status(400).json({
+      code: 1,
+      data: null,
+      msg: 'please use /api/auth/register to create a user'
     });
   } catch (error) {
     next(error);
   }
 };
 
+/**
+ * 逻辑删除用户。
+ * 这里不是直接删库，而是把 `is_deleted` 置为 1。
+ *
+ * @param {import('express').Request} req 请求对象
+ * @param {import('express').Response} res 响应对象
+ * @param {import('express').NextFunction} next Express next
+ * @returns {Promise<void>}
+ */
 const deleteUser = async (req, res, next) => {
   try {
-    const { name } = req.params;
+    const { account } = req.params;
 
-    // 检查用户是否存在
-    const checkSql = 'SELECT id FROM Tab_User_Info WHERE name = ?';
-    const [existingUsers] = await pool.query(checkSql, [name]);
+    if (!account) {
+      throw new AppError('account is required', 400);
+    }
+
+    const [existingUsers] = await pool.query(
+      'SELECT id FROM Tab_User_Info WHERE account = ? AND is_deleted = 0 LIMIT 1',
+      [account]
+    );
 
     if (existingUsers.length === 0) {
-      return res.status(200).json({
+      return res.status(404).json({
         code: 1,
         data: null,
-        msg: '用户不存在'
+        msg: 'user not found'
       });
     }
 
-    const sql = 'DELETE FROM Tab_User_Info WHERE name = ?';
-    await pool.execute(sql, [name]);
+    await pool.execute(
+      'UPDATE Tab_User_Info SET is_deleted = 1 WHERE account = ?',
+      [account]
+    );
 
-    res.status(200).json({
+    res.json({
       code: 0,
-      data: { name },
-      msg: '用户删除成功'
+      data: { account },
+      msg: 'delete user success'
     });
   } catch (error) {
     next(error);

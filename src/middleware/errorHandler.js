@@ -1,6 +1,6 @@
 const notFoundHandler = (req, res) => {
   res.status(404).json({
-    code: 0,
+    code: 1,
     data: null,
     msg: `Route not found: ${req.method} ${req.originalUrl}`
   });
@@ -16,7 +16,7 @@ const errorHandler = (error, req, res, next) => {
   console.error(error);
 
   res.status(statusCode).json({
-    code: 0,
+    code: 1,
     data: null,
     msg: error.publicMessage || error.message || 'Internal server error'
   });

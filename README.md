@@ -1,16 +1,24 @@
 # my-first-pro
 
-一个基于 Express 和 MySQL 的简单后端服务示例，现已支持 JWT 鉴权。
+一个基于 Node.js、Express 和 MySQL 的用户中心后端示例，直接落地在现有项目结构中。
 
-## 安装依赖
+## 这次调整前存在的问题
+
+- 现有登录逻辑仍使用明文密码，不符合企业级鉴权要求
+- 现有 JWT 载荷只包含简单用户信息，未包含角色
+- `src/routes/authRoutes.js` 和 `src/routes/userRoutes.js` 存在重复 `/api` 路径拼接问题
+- 错误处理中间件返回错误时 `code` 仍是 `0`
+
+## 依赖安装
 
 ```bash
-npm install
+npm install bcrypt
 ```
 
-## 配置环境变量
+## 环境变量
 
-参考 `.env.example` 配置以下变量：
+参考 `.env.example`：
+
 - `PORT`
 - `DB_HOST`
 - `DB_PORT`
@@ -21,97 +29,64 @@ npm install
 - `JWT_SECRET`
 - `JWT_EXPIRES_IN`
 
-如果你使用 Node.js 20+，可以这样启动：
-
-```bash
-node --env-file=.env src/server.js
-```
-
-或者先在终端里设置环境变量，再执行：
+## 启动
 
 ```bash
 npm start
 ```
 
-## 启动项目
-
-```bash
-npm start
-```
-
-默认端口为 `8090`。
-
-## 鉴权接口
+## 已实现接口
 
 ### `POST /api/auth/register`
 
-注册并直接返回 JWT。请求体示例：
+请求体：
 
 ```json
 {
-  "name": "Alice",
+  "account": "zhangsan",
   "password": "123456",
-  "description": "Example user"
+  "nickName": "张三",
+  "realName": "张三",
+  "phone": "13800000000",
+  "email": "zhangsan@example.com"
 }
 ```
 
 ### `POST /api/auth/login`
 
-登录并返回 JWT。请求体示例：
+请求体：
 
 ```json
 {
-  "name": "Alice",
+  "account": "zhangsan",
   "password": "123456"
 }
 ```
 
 ### `GET /api/auth/me`
 
-获取当前登录用户信息，请在请求头中携带：
+请求头：
 
 ```http
-Authorization: Bearer <token>
+Authorization: Bearer <accessToken>
 ```
 
-## 业务接口
+### `GET /api/auth/roles`
 
-### `GET /`
+请求头：
 
-返回服务存活信息。
-
-### `GET /api/test-db`
-
-测试数据库连接。
-
-### `GET /api/user`
-
-查询用户列表，需要 JWT。
-
-### `POST /api/user`
-
-新增用户，需要 JWT。请求体示例：
-
-```json
-{
-  "name": "Bob",
-  "description": "New user"
-}
+```http
+Authorization: Bearer <accessToken>
 ```
 
-### `DELETE /api/user/:name`
+### `GET /api/auth/permissions`
 
-按用户名删除用户，需要 JWT。
+请求头：
 
-## 目录结构
-
-```text
-src/
-  config/
-  controllers/
-  middleware/
-  routes/
-  utils/
-  app.js
-  server.js
+```http
+Authorization: Bearer <accessToken>
 ```
+
+## 相关 SQL
+
+完整建表和初始化脚本见 [user-center.sql](D:/张艺学习/node-test/user-center.sql)。
